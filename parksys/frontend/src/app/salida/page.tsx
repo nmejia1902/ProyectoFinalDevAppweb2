@@ -1,12 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useContext } from "react"
 import { buscarSalida, registrarSalida } from "@/services/api"
+import { EspacioContext } from "@/contexto/EspacioContext"
+import Factura from "@/componentes/Factura"
 
 export default function Salida(){
 
+ const { cargarEspacios } = useContext(EspacioContext)
+
  const [placa,setPlaca] = useState("")
  const [data,setData] = useState<any>(null)
+ const [factura,setFactura] = useState<any>(null)
 
  async function buscar(){
 
@@ -19,7 +24,17 @@ export default function Salida(){
 
   await registrarSalida(data)
 
-  alert("Salida registrada")
+  await cargarEspacios()
+
+  setFactura({
+   placa,
+   espacio:data.espacio_id,
+   horas:data.horas,
+   monto:data.monto,
+   fecha:new Date().toLocaleString()
+  })
+
+  setData(null)
 
  }
 
@@ -58,6 +73,12 @@ export default function Salida(){
      </button>
 
     </div>
+
+   )}
+
+   {factura &&(
+
+    <Factura data={factura}/>
 
    )}
 

@@ -1,12 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useContext } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { registrarEntrada } from "@/services/api"
+import { EspacioContext } from "@/contexto/EspacioContext"
 
 export default function Entrada(){
 
  const params = useSearchParams()
+ const router = useRouter()
+
+ const { cargarEspacios } = useContext(EspacioContext)
 
  const espacioInicial = params.get("espacio") || ""
 
@@ -26,7 +30,11 @@ export default function Entrada(){
    espacio_id:espacio
   })
 
-  alert("Entrada registrada")
+  // actualizar espacios
+  await cargarEspacios()
+
+  // regresar al dashboard
+  router.push("/dashboard")
 
  }
 
