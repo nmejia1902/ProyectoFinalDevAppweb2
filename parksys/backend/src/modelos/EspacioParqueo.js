@@ -18,7 +18,8 @@ const EspacioParqueo = sequelize.define("espacios_parqueo",{
  }
 
 },{
- timestamps:false
+ timestamps:false,
+ freezeTableName:true
 })
 
 module.exports = EspacioParqueo

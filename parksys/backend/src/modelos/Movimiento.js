@@ -38,7 +38,8 @@ const Movimiento = sequelize.define("movimientos",{
  }
 
 },{
- timestamps:false
+ timestamps:false,
+ freezeTableName:true
 })
 
 module.exports = Movimiento

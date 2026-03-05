@@ -14,7 +14,8 @@ const Tarifa = sequelize.define("tarifas",{
  }
 
 },{
- timestamps:false
+ timestamps:false,
+ freezeTableName:true
 })
 
 module.exports = Tarifa

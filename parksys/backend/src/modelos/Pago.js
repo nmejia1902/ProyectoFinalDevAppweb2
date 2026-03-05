@@ -22,7 +22,8 @@ const Pago = sequelize.define("pagos",{
  }
 
 },{
- timestamps:false
+ timestamps:false,
+ freezeTableName:true
 })
 
 module.exports = Pago

@@ -22,7 +22,8 @@ const Vehiculo = sequelize.define("vehiculos",{
  }
 
 },{
- timestamps:false
+ timestamps:false,
+ freezeTableName:true
 })
 
 module.exports = Vehiculo
