@@ -34,8 +34,8 @@ export default function CuadriculaParqueo(){
      <div key={e.id} className="col-md-2 mb-3">
 
       <div
-       style={{cursor:"pointer"}}
        onClick={()=>seleccionarEspacio(e.id,e.estado)}
+       style={{cursor:"pointer"}}
        className={`card text-center ${
         e.estado==="disponible"
         ?"bg-success text-white"
@@ -46,7 +46,12 @@ export default function CuadriculaParqueo(){
        <div className="card-body">
 
         <h5>Espacio</h5>
+
         <h4>{e.numero}</h4>
+
+        {e.estado==="ocupado" && (
+         <p className="fw-bold"> {e.placa}</p>
+        )}
 
        </div>
 

@@ -3,10 +3,9 @@ const cors = require("cors")
 
 const sequelize = require("./db/conexion")
 
+const EspacioParqueo = require("./modelos/EspacioParqueo")
 const Vehiculo = require("./modelos/Vehiculo")
-const Espacio = require("./modelos/EspacioParqueo")
 const Movimiento = require("./modelos/Movimiento")
-const Pago = require("./modelos/Pago")
 const Tarifa = require("./modelos/Tarifa")
 
 const app = express()
@@ -14,133 +13,214 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-// conexión
-sequelize.authenticate()
-.then(()=>{
- console.log("Conectado a MySQL")
-})
-.catch(err=>{
- console.error("Error de conexión", err)
-})
+/* ===============================
+   OBTENER ESPACIOS DEL PARQUEO
+================================ */
 
-
-// obtener espacios
 app.get("/api/espacios", async (req,res)=>{
 
- const espacios = await Espacio.findAll()
- res.json(espacios)
+ try{
+
+  const espacios = await EspacioParqueo.findAll()
+
+  const resultado = []
+
+  for(const espacio of espacios){
+
+   const movimiento = await Movimiento.findOne({
+    where:{
+     espacio_id: espacio.id,
+     estado: "activo"
+    }
+   })
+
+   let placa = null
+
+   if(movimiento){
+
+    const vehiculo = await Vehiculo.findOne({
+     where:{ id: movimiento.vehiculo_id }
+    })
+
+    if(vehiculo){
+     placa = vehiculo.placa
+    }
+
+   }
+
+   resultado.push({
+    id: espacio.id,
+    numero: espacio.numero,
+    estado: espacio.estado,
+    placa: placa
+   })
+
+  }
+
+  res.json(resultado)
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al obtener espacios"})
+
+ }
 
 })
 
+/* ===============================
+   REGISTRAR ENTRADA
+================================ */
 
-// registrar entrada
 app.post("/api/entrada", async (req,res)=>{
 
- const {placa,nombre,telefono,espacio_id} = req.body
+ try{
 
- let vehiculo = await Vehiculo.findOne({
-  where:{ placa }
- })
+  const { placa, nombre, telefono, espacio_id } = req.body
 
- if(!vehiculo){
-
-  vehiculo = await Vehiculo.create({
-   placa,
-   nombre_propietario:nombre,
-   telefono
+  let vehiculo = await Vehiculo.findOne({
+   where:{ placa }
   })
 
+  if(!vehiculo){
+
+   vehiculo = await Vehiculo.create({
+    placa,
+    nombre_propietario:nombre,
+    telefono
+   })
+
+  }
+
+  await Movimiento.create({
+   vehiculo_id: vehiculo.id,
+   espacio_id: espacio_id,
+   hora_entrada: new Date(),
+   estado: "activo"
+  })
+
+  await EspacioParqueo.update(
+   { estado:"ocupado" },
+   { where:{ id: espacio_id } }
+  )
+
+  res.json({mensaje:"Entrada registrada"})
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al registrar entrada"})
+
  }
-
- await Movimiento.create({
-  vehiculo_id:vehiculo.id,
-  espacio_id,
-  hora_entrada:new Date(),
-  estado:"activo"
- })
-
- await Espacio.update(
-  {estado:"ocupado"},
-  {where:{id:espacio_id}}
- )
-
- res.json({mensaje:"Entrada registrada"})
 
 })
 
+/* ===============================
+   BUSCAR VEHICULO PARA SALIDA
+================================ */
 
-// buscar vehículo para salida
 app.get("/api/salida/:placa", async (req,res)=>{
 
- const placa = req.params.placa
+ try{
 
- const vehiculo = await Vehiculo.findOne({
-  where:{placa}
- })
+  const placa = req.params.placa
 
- if(!vehiculo){
-  return res.json({mensaje:"Vehículo no encontrado"})
- }
+  const vehiculo = await Vehiculo.findOne({
+   where:{ placa }
+  })
 
- const movimiento = await Movimiento.findOne({
-  where:{
-   vehiculo_id:vehiculo.id,
-   estado:"activo"
+  if(!vehiculo){
+   return res.json({mensaje:"Vehículo no encontrado"})
   }
- })
 
- if(!movimiento){
-  return res.json({mensaje:"Vehículo no está en el parqueo"})
+  const movimiento = await Movimiento.findOne({
+   where:{
+    vehiculo_id: vehiculo.id,
+    estado:"activo"
+   }
+  })
+
+  if(!movimiento){
+   return res.json({mensaje:"Vehículo no está en el parqueo"})
+  }
+
+  const tarifa = await Tarifa.findOne()
+
+  const entrada = new Date(movimiento.hora_entrada)
+  const salida = new Date()
+
+  const horas = Math.ceil((salida - entrada)/(1000*60*60))
+
+  const monto = horas * tarifa.precio_por_hora
+
+  res.json({
+   movimiento_id: movimiento.id,
+   espacio_id: movimiento.espacio_id,
+   horas,
+   monto,
+   placa: vehiculo.placa,
+   nombre: vehiculo.nombre_propietario
+  })
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al calcular salida"})
+
  }
-
- const tarifa = await Tarifa.findOne()
-
- const entrada = new Date(movimiento.hora_entrada)
- const salida = new Date()
-
- const horas = Math.ceil((salida - entrada)/(1000*60*60))
-
- const monto = horas * tarifa.precio_por_hora
-
- res.json({
-  movimiento_id:movimiento.id,
-  espacio_id:movimiento.espacio_id,
-  horas,
-  monto
- })
 
 })
 
+/* ===============================
+   REGISTRAR SALIDA
+================================ */
 
-// registrar salida
 app.post("/api/salida", async (req,res)=>{
 
- const {movimiento_id,espacio_id,horas,monto} = req.body
+ try{
 
- await Movimiento.update({
-  hora_salida:new Date(),
-  tiempo_total:horas,
-  monto_total:monto,
-  estado:"finalizado"
- },{
-  where:{id:movimiento_id}
- })
+  const { movimiento_id, espacio_id } = req.body
 
- await Pago.create({
-  movimiento_id,
-  monto,
-  metodo_pago:"efectivo"
- })
+  await Movimiento.update(
+   {
+    hora_salida:new Date(),
+    estado:"finalizado"
+   },
+   {
+    where:{ id: movimiento_id }
+   }
+  )
 
- await Espacio.update(
-  {estado:"disponible"},
-  {where:{id:espacio_id}}
- )
+  await EspacioParqueo.update(
+   { estado:"disponible" },
+   { where:{ id: espacio_id } }
+  )
 
- res.json({mensaje:"Salida registrada"})
+  res.json({mensaje:"Salida registrada"})
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al registrar salida"})
+
+ }
 
 })
 
-app.listen(5000,()=>{
- console.log("Servidor ParkSys ejecutándose en puerto 5000")
+/* ===============================
+   INICIAR SERVIDOR
+================================ */
+
+sequelize.authenticate()
+.then(()=>{
+
+ console.log("Conectado a MySQL")
+
+ app.listen(5000,()=>{
+  console.log("Servidor ParkSys ejecutándose en puerto 5000")
+ })
+
+})
+.catch(error=>{
+ console.error("Error de conexión:", error)
 })
