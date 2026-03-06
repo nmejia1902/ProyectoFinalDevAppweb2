@@ -9,12 +9,13 @@ const EspacioParqueo = sequelize.define("espacios_parqueo",{
   autoIncrement:true
  },
 
- numero:{
-  type:DataTypes.INTEGER
- },
+ numero:DataTypes.INTEGER,
 
- estado:{
-  type:DataTypes.STRING
+ estado:DataTypes.STRING,
+
+ habilitado:{
+  type:DataTypes.BOOLEAN,
+  defaultValue:true
  }
 
 },{

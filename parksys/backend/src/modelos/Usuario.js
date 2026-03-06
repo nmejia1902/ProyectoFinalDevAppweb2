@@ -9,21 +9,15 @@ const Usuario = sequelize.define("usuarios",{
   autoIncrement:true
  },
 
- nombre:{
-  type:DataTypes.STRING
- },
+ nombre:DataTypes.STRING,
 
- email:{
-  type:DataTypes.STRING
- },
+ email:DataTypes.STRING,
 
- password:{
-  type:DataTypes.STRING
- },
+ password:DataTypes.STRING,
 
- rol:{
-  type:DataTypes.STRING
- }
+ rol:DataTypes.STRING,
+
+ fecha_creacion:DataTypes.DATE
 
 },{
  timestamps:false,

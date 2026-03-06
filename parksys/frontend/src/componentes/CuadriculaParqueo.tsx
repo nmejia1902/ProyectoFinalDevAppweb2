@@ -10,14 +10,33 @@ export default function CuadriculaParqueo(){
 
  const router = useRouter()
 
- function seleccionarEspacio(id:number,estado:string){
+ function seleccionarEspacio(id:number,estado:string,habilitado:boolean){
 
-  if(estado==="ocupado"){
+  if(!habilitado){
+   alert("Este parqueo está deshabilitado")
+   return
+  }
+
+  if(estado === "ocupado"){
    alert("Espacio ocupado")
    return
   }
 
   router.push(`/entrada?espacio=${id}`)
+
+ }
+
+ function colorEspacio(e:any){
+
+  if(!e.habilitado){
+   return "bg-dark text-white"
+  }
+
+  if(e.estado === "ocupado"){
+   return "bg-danger text-white"
+  }
+
+  return "bg-success text-white"
 
  }
 
@@ -29,28 +48,31 @@ export default function CuadriculaParqueo(){
 
    <div className="row">
 
-    {espacios.map((e)=>(
-     
+    {espacios.map((e:any)=>(
+
      <div key={e.id} className="col-md-2 mb-3">
 
       <div
-       onClick={()=>seleccionarEspacio(e.id,e.estado)}
-       style={{cursor:"pointer"}}
-       className={`card text-center ${
-        e.estado==="disponible"
-        ?"bg-success text-white"
-        :"bg-danger text-white"
-       }`}
+       onClick={()=>seleccionarEspacio(e.id,e.estado,e.habilitado)}
+       style={{
+        cursor:"pointer",
+        height:"110px"
+       }}
+       className={`card text-center d-flex justify-content-center ${colorEspacio(e)}`}
       >
 
-       <div className="card-body">
+       <div className="card-body d-flex flex-column justify-content-center">
 
-        <h5>Espacio</h5>
+        <h6>Espacio</h6>
 
         <h4>{e.numero}</h4>
 
-        {e.estado==="ocupado" && (
-         <p className="fw-bold"> {e.placa}</p>
+        {e.estado === "ocupado" && (
+         <small className="fw-bold">🚗 {e.placa}</small>
+        )}
+
+        {!e.habilitado && (
+         <small>Fuera de servicio</small>
         )}
 
        </div>
@@ -60,6 +82,14 @@ export default function CuadriculaParqueo(){
      </div>
 
     ))}
+
+   </div>
+
+   <div className="mt-3">
+
+    <span className="badge bg-success me-2">Disponible</span>
+    <span className="badge bg-danger me-2">Ocupado</span>
+    <span className="badge bg-dark">Deshabilitado</span>
 
    </div>
 

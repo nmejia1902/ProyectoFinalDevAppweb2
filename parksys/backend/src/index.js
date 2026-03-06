@@ -7,15 +7,53 @@ const EspacioParqueo = require("./modelos/EspacioParqueo")
 const Vehiculo = require("./modelos/Vehiculo")
 const Movimiento = require("./modelos/Movimiento")
 const Tarifa = require("./modelos/Tarifa")
+const Usuario = require("./modelos/Usuario")
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
 
-/* ===============================
+/* ======================================
+   LOGIN
+====================================== */
+
+app.post("/api/login", async (req,res)=>{
+
+ try{
+
+  const {email,password} = req.body
+
+  const user = await Usuario.findOne({
+   where:{email,password}
+  })
+
+  if(!user){
+   return res.json({
+    success:false,
+    mensaje:"Credenciales incorrectas"
+   })
+  }
+
+  res.json({
+   success:true,
+   id:user.id,
+   nombre:user.nombre,
+   rol:user.rol
+  })
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error en login"})
+
+ }
+
+})
+
+/* ======================================
    OBTENER ESPACIOS DEL PARQUEO
-================================ */
+====================================== */
 
 app.get("/api/espacios", async (req,res)=>{
 
@@ -30,7 +68,7 @@ app.get("/api/espacios", async (req,res)=>{
    const movimiento = await Movimiento.findOne({
     where:{
      espacio_id: espacio.id,
-     estado: "activo"
+     estado:"activo"
     }
    })
 
@@ -39,7 +77,7 @@ app.get("/api/espacios", async (req,res)=>{
    if(movimiento){
 
     const vehiculo = await Vehiculo.findOne({
-     where:{ id: movimiento.vehiculo_id }
+     where:{ id:movimiento.vehiculo_id }
     })
 
     if(vehiculo){
@@ -49,10 +87,11 @@ app.get("/api/espacios", async (req,res)=>{
    }
 
    resultado.push({
-    id: espacio.id,
-    numero: espacio.numero,
-    estado: espacio.estado,
-    placa: placa
+    id:espacio.id,
+    numero:espacio.numero,
+    estado:espacio.estado,
+    habilitado: espacio.habilitado,
+    placa
    })
 
   }
@@ -68,18 +107,18 @@ app.get("/api/espacios", async (req,res)=>{
 
 })
 
-/* ===============================
+/* ======================================
    REGISTRAR ENTRADA
-================================ */
+====================================== */
 
 app.post("/api/entrada", async (req,res)=>{
 
  try{
 
-  const { placa, nombre, telefono, espacio_id } = req.body
+  const {placa,nombre,telefono,espacio_id} = req.body
 
   let vehiculo = await Vehiculo.findOne({
-   where:{ placa }
+   where:{placa}
   })
 
   if(!vehiculo){
@@ -93,15 +132,15 @@ app.post("/api/entrada", async (req,res)=>{
   }
 
   await Movimiento.create({
-   vehiculo_id: vehiculo.id,
-   espacio_id: espacio_id,
-   hora_entrada: new Date(),
-   estado: "activo"
+   vehiculo_id:vehiculo.id,
+   espacio_id:espacio_id,
+   hora_entrada:new Date(),
+   estado:"activo"
   })
 
   await EspacioParqueo.update(
-   { estado:"ocupado" },
-   { where:{ id: espacio_id } }
+   {estado:"ocupado"},
+   {where:{id:espacio_id}}
   )
 
   res.json({mensaje:"Entrada registrada"})
@@ -115,9 +154,9 @@ app.post("/api/entrada", async (req,res)=>{
 
 })
 
-/* ===============================
+/* ======================================
    BUSCAR VEHICULO PARA SALIDA
-================================ */
+====================================== */
 
 app.get("/api/salida/:placa", async (req,res)=>{
 
@@ -126,7 +165,7 @@ app.get("/api/salida/:placa", async (req,res)=>{
   const placa = req.params.placa
 
   const vehiculo = await Vehiculo.findOne({
-   where:{ placa }
+   where:{placa}
   })
 
   if(!vehiculo){
@@ -135,7 +174,7 @@ app.get("/api/salida/:placa", async (req,res)=>{
 
   const movimiento = await Movimiento.findOne({
    where:{
-    vehiculo_id: vehiculo.id,
+    vehiculo_id:vehiculo.id,
     estado:"activo"
    }
   })
@@ -154,12 +193,12 @@ app.get("/api/salida/:placa", async (req,res)=>{
   const monto = horas * tarifa.precio_por_hora
 
   res.json({
-   movimiento_id: movimiento.id,
-   espacio_id: movimiento.espacio_id,
+   movimiento_id:movimiento.id,
+   espacio_id:movimiento.espacio_id,
    horas,
    monto,
-   placa: vehiculo.placa,
-   nombre: vehiculo.nombre_propietario
+   placa:vehiculo.placa,
+   nombre:vehiculo.nombre_propietario
   })
 
  }catch(error){
@@ -171,15 +210,15 @@ app.get("/api/salida/:placa", async (req,res)=>{
 
 })
 
-/* ===============================
+/* ======================================
    REGISTRAR SALIDA
-================================ */
+====================================== */
 
 app.post("/api/salida", async (req,res)=>{
 
  try{
 
-  const { movimiento_id, espacio_id } = req.body
+  const {movimiento_id,espacio_id} = req.body
 
   await Movimiento.update(
    {
@@ -187,13 +226,13 @@ app.post("/api/salida", async (req,res)=>{
     estado:"finalizado"
    },
    {
-    where:{ id: movimiento_id }
+    where:{id:movimiento_id}
    }
   )
 
   await EspacioParqueo.update(
-   { estado:"disponible" },
-   { where:{ id: espacio_id } }
+   {estado:"disponible"},
+   {where:{id:espacio_id}}
   )
 
   res.json({mensaje:"Salida registrada"})
@@ -207,9 +246,145 @@ app.post("/api/salida", async (req,res)=>{
 
 })
 
-/* ===============================
+/* ======================================
+   TARIFA ADMIN
+====================================== */
+
+app.get("/api/tarifa", async (req,res)=>{
+
+ try{
+
+  const tarifa = await Tarifa.findOne()
+
+  res.json(tarifa)
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al obtener tarifa"})
+
+ }
+
+})
+
+app.put("/api/tarifa", async (req,res)=>{
+
+ try{
+
+  const {precio} = req.body
+
+  await Tarifa.update(
+   {precio_por_hora:precio},
+   {where:{id:1}}
+  )
+
+  res.json({mensaje:"Tarifa actualizada"})
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al actualizar tarifa"})
+
+ }
+
+})
+
+/* ======================================
+   ADMINISTRAR PARQUEOS
+====================================== */
+
+app.get("/api/admin/parqueos", async (req,res)=>{
+
+ try{
+
+  const espacios = await EspacioParqueo.findAll()
+
+  res.json(espacios)
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al obtener parqueos"})
+
+ }
+
+})
+
+app.put("/api/admin/parqueos/:id", async (req,res)=>{
+
+ try{
+
+  const id = req.params.id
+  const {habilitado} = req.body
+
+  await EspacioParqueo.update(
+   {habilitado},
+   {where:{id}}
+  )
+
+  res.json({mensaje:"Estado actualizado"})
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al actualizar parqueo"})
+
+ }
+
+})
+
+/* ======================================
+   Habilitar parqueos
+====================================== */
+app.put("/api/admin/parqueos/:id", async (req,res)=>{
+
+ try{
+
+  const id = req.params.id
+  const {habilitado} = req.body
+
+  await EspacioParqueo.update(
+   {habilitado},
+   {where:{id}}
+  )
+
+  res.json({mensaje:"Estado actualizado"})
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al actualizar parqueo"})
+
+ }
+
+})
+
+/* ======================================
+   REPORTES
+====================================== */
+
+app.get("/api/admin/reportes", async (req,res)=>{
+
+ try{
+
+  const movimientos = await Movimiento.findAll({
+   where:{estado:"finalizado"}
+  })
+
+  res.json(movimientos)
+
+ }catch(error){
+
+  console.error(error)
+  res.status(500).json({mensaje:"Error al generar reporte"})
+
+ }
+
+})
+
+/* ======================================
    INICIAR SERVIDOR
-================================ */
+====================================== */
 
 sequelize.authenticate()
 .then(()=>{
