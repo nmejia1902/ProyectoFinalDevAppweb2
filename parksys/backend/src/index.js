@@ -14,9 +14,9 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-/* ======================================
-   LOGIN
-====================================== */
+/* 
+   Api del login
+*/
 
 app.post("/api/login", async (req,res)=>{
 
@@ -51,9 +51,9 @@ app.post("/api/login", async (req,res)=>{
 
 })
 
-/* ======================================
-   OBTENER ESPACIOS DEL PARQUEO
-====================================== */
+/* 
+   Api para obtener los espacios del parqueo
+*/
 
 app.get("/api/espacios", async (req,res)=>{
 
@@ -107,9 +107,9 @@ app.get("/api/espacios", async (req,res)=>{
 
 })
 
-/* ======================================
-   REGISTRAR ENTRADA
-====================================== */
+/*
+   Api para regitsrar la entrada del vehiculo
+*/
 
 app.post("/api/entrada", async (req,res)=>{
 
@@ -154,9 +154,9 @@ app.post("/api/entrada", async (req,res)=>{
 
 })
 
-/* ======================================
-   BUSCAR VEHICULO PARA SALIDA
-====================================== */
+/*
+   Api para buscar la salida del vehiculo y calcular el monto a pagar  
+*/
 
 app.get("/api/salida/:placa", async (req,res)=>{
 
@@ -210,9 +210,9 @@ app.get("/api/salida/:placa", async (req,res)=>{
 
 })
 
-/* ======================================
-   REGISTRAR SALIDA
-====================================== */
+/*
+   Api para registrar salida del vehiculo y generar el pago y cambiar estado del espacio a disponible
+*/
 
 app.post("/api/salida", async (req,res)=>{
 
@@ -246,9 +246,9 @@ app.post("/api/salida", async (req,res)=>{
 
 })
 
-/* ======================================
-   TARIFA ADMIN
-====================================== */
+/*
+   api para obtener la tarifa actual y actualizarla
+*/
 
 app.get("/api/tarifa", async (req,res)=>{
 
@@ -289,9 +289,9 @@ app.put("/api/tarifa", async (req,res)=>{
 
 })
 
-/* ======================================
-   ADMINISTRAR PARQUEOS
-====================================== */
+/*
+   Api de control para el administrador, para habilitar o deshabilitar espacios de parqueo y generar reportes de movimientos finalizados
+*/
 
 app.get("/api/admin/parqueos", async (req,res)=>{
 
@@ -333,35 +333,10 @@ app.put("/api/admin/parqueos/:id", async (req,res)=>{
 
 })
 
-/* ======================================
-   Habilitar parqueos
-====================================== */
-app.put("/api/admin/parqueos/:id", async (req,res)=>{
 
- try{
-
-  const id = req.params.id
-  const {habilitado} = req.body
-
-  await EspacioParqueo.update(
-   {habilitado},
-   {where:{id}}
-  )
-
-  res.json({mensaje:"Estado actualizado"})
-
- }catch(error){
-
-  console.error(error)
-  res.status(500).json({mensaje:"Error al actualizar parqueo"})
-
- }
-
-})
-
-/* ======================================
-   REPORTES
-====================================== */
+/*
+   api para generar reportes de movimientos finalizados para el administrador
+*/
 
 app.get("/api/admin/reportes", async (req,res)=>{
 
@@ -382,9 +357,9 @@ app.get("/api/admin/reportes", async (req,res)=>{
 
 })
 
-/* ======================================
-   INICIAR SERVIDOR
-====================================== */
+/*
+   iniciar el servidor y conectar a la base de datos MySQL usando Sequelize
+*/
 
 sequelize.authenticate()
 .then(()=>{
