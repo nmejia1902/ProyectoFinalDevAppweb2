@@ -68,7 +68,7 @@ export default function CuadriculaParqueo(){
         <h4>{e.numero}</h4>
 
         {e.estado === "ocupado" && (
-         <small className="fw-bold">🚗 {e.placa}</small>
+         <small className="fw-bold"> {e.placa}</small>
         )}
 
         {!e.habilitado && (
