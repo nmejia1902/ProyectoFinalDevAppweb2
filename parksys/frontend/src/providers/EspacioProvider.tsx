@@ -16,11 +16,17 @@ export default function EspacioProvider({children}:{children:React.ReactNode}){
 
  }
 
- useEffect(()=>{
+useEffect(()=>{
 
+ cargarEspacios()
+
+ const intervalo = setInterval(()=>{
   cargarEspacios()
+ },5000) // actualiza cada 5 segundos
 
- },[])
+ return ()=>clearInterval(intervalo)
+
+},[])
 
  return(
 

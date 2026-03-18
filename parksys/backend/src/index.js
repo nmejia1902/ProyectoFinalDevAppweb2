@@ -346,12 +346,42 @@ app.get("/api/admin/reportes", async (req,res)=>{
    where:{estado:"finalizado"}
   })
 
-  res.json(movimientos)
+  const tarifa = await Tarifa.findOne()
+
+  const reporte = {}
+
+  movimientos.forEach(m => {
+
+   const fecha = new Date(m.hora_salida).toLocaleDateString()
+
+   const horas = Math.ceil(
+    (new Date(m.hora_salida) - new Date(m.hora_entrada)) / (1000*60*60)
+   )
+
+   const monto = horas * tarifa.precio_por_hora
+
+   if(!reporte[fecha]){
+    reporte[fecha] = 0
+   }
+
+   reporte[fecha] += monto
+
+  })
+
+  const resultado = Object.keys(reporte).map(fecha=>({
+   fecha,
+   total: reporte[fecha]
+  }))
+
+  res.json({
+   movimientos,
+   ingresos: resultado
+  })
 
  }catch(error){
 
   console.error(error)
-  res.status(500).json({mensaje:"Error al generar reporte"})
+  res.status(500).json({mensaje:"Error en reportes"})
 
  }
 
